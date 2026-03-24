@@ -1,0 +1,15 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  background: #F2F1ED;
+  color: #2C2C2C;
+}
+
+#root {
+  min-height: 100vh;
+}
