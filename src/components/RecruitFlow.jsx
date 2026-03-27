@@ -36,8 +36,8 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
   const [scheduleModal, setScheduleModal] = useState(null)
   const [scheduleDateTime, setScheduleDateTime] = useState('')
   const [photos, setPhotos] = useState({})
-  const [attachedFiles, setAttachedFiles] = useState([])
   const [pendingFile, setPendingFile] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   // Detail drawer data
   const [drawerNotes, setDrawerNotes] = useState([])
@@ -117,7 +117,8 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
   // CANDIDATE ACTIONS
   // ============================================================
   const handleAddCandidate = async () => {
-    if (!quickForm.name) return
+    if (!quickForm.name || submitting) return
+    setSubmitting(true)
     try {
       const newCandidate = await createCandidate({
         name: quickForm.name, email: quickForm.email, phone: quickForm.phone,
@@ -143,6 +144,8 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
     } catch (err) {
       console.error('Error adding candidate:', err)
       alert('Error adding candidate: ' + err.message)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -243,7 +246,8 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
   // PURSUITS
   // ============================================================
   const handleAddPursuit = async () => {
-    if (!pursuitForm.name) return
+    if (!pursuitForm.name || submitting) return
+    setSubmitting(true)
     try {
       const p = await createPursuit({
         name: pursuitForm.name, email: pursuitForm.email, phone: pursuitForm.phone,
@@ -258,6 +262,8 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
       await loadData()
     } catch (err) {
       console.error('Error adding pursuit:', err)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -285,6 +291,8 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
   }
 
   const convertPursuitToCandidate = async (pursuit) => {
+    if (submitting) return
+    setSubmitting(true)
     try {
       await createCandidate({
         name: pursuit.name, email: pursuit.email, phone: pursuit.phone,
@@ -297,6 +305,8 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
       await loadData()
     } catch (err) {
       console.error('Error converting pursuit:', err)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -305,8 +315,9 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
   // ============================================================
   const handleDrop = useCallback((e) => {
     e.preventDefault()
+    e.stopPropagation()
     setDragOver(false)
-    if (dragCandidate) return // This is a card drag, not a file drop
+    if (dragCandidate) return
     const files = Array.from(e.dataTransfer.files)
     if (files.length > 0) {
       setPendingFile(files[0])
@@ -411,8 +422,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
   )
 
   // ============================================================
-  // RENDER — this mirrors the prototype structure exactly
-  // The key difference is all actions call Supabase instead of local state
+  // RENDER
   // ============================================================
   return (
     <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: '#F2F1ED', minHeight: '100vh', color: '#2C2C2C' }}>
@@ -442,7 +452,6 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
 
       {/* PIPELINE TAB */}
       {mainTab === 'pipeline' && (<>
-        {/* Toolbar */}
         <div style={{ padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, borderBottom: '1px solid #E5E3DC' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ position: 'relative' }}>
@@ -496,8 +505,8 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
                 return (
                   <div key={stage.id}
                     onDragOver={e => handleStageDragOver(e, stage.id)} onDragLeave={() => setDragOverStage(null)} onDrop={e => handleStageDrop(e, stage.id)}
-                    style={{ background: dragOverStage === stage.id ? stage.color + '10' : isEnd ? '#F7F6F3' : '#fff', borderRadius: 12, border: dragOverStage === stage.id ? `2px solid ${stage.color}40` : `1px solid ${isEnd ? '#E5E3DC' : '#E5E3DC'}`, minHeight: 360, display: 'flex', flexDirection: 'column', transition: 'all 0.2s', opacity: isEnd ? 0.85 : 1 }}>
-                    <div style={{ padding: '12px 12px 8px', borderBottom: `1px solid ${isEnd ? '#E5E3DC' : '#E5E3DC'}` }}>
+                    style={{ background: dragOverStage === stage.id ? stage.color + '10' : isEnd ? '#F7F6F3' : '#fff', borderRadius: 12, border: dragOverStage === stage.id ? `2px solid ${stage.color}40` : '1px solid #E5E3DC', minHeight: 360, display: 'flex', flexDirection: 'column', transition: 'all 0.2s', opacity: isEnd ? 0.85 : 1 }}>
+                    <div style={{ padding: '12px 12px 8px', borderBottom: '1px solid #E5E3DC' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                           <span style={{ fontSize: 13 }}>{stage.icon}</span>
@@ -532,7 +541,6 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
               })}
             </div>
           ) : (
-            /* List View */
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E3DC', overflow: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
@@ -713,7 +721,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 18, justifyContent: 'flex-end' }}>
               <button onClick={() => { setShowAddForm(false); setPendingFile(null) }} style={btnSecondary}>Cancel</button>
-              <button onClick={handleAddCandidate} style={btnPrimary('#0D395A')}>Add to Pipeline</button>
+              <button onClick={handleAddCandidate} disabled={submitting} style={{ ...btnPrimary('#0D395A'), opacity: submitting ? 0.5 : 1 }}>{submitting ? 'Adding...' : 'Add to Pipeline'}</button>
             </div>
           </div>
         </div>
@@ -733,7 +741,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 18, justifyContent: 'flex-end' }}>
               <button onClick={() => setShowAddPursuit(false)} style={btnSecondary}>Cancel</button>
-              <button onClick={handleAddPursuit} style={btnPrimary('#D4967D')}>Add to Pursuits</button>
+              <button onClick={handleAddPursuit} disabled={submitting} style={{ ...btnPrimary('#D4967D'), opacity: submitting ? 0.5 : 1 }}>{submitting ? 'Adding...' : 'Add to Pursuits'}</button>
             </div>
           </div>
         </div>
@@ -756,7 +764,6 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
                 <span style={{ padding: '3px 9px', borderRadius: 10, background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: 10, fontWeight: 600 }}>{STAGES.find(s => s.id === selectedCandidate.stage)?.icon} {STAGES.find(s => s.id === selectedCandidate.stage)?.label}</span>
               </div>
             </div>
-            {/* Move stage */}
             <div style={{ padding: '14px 24px', borderBottom: '1px solid #E5E3DC', background: '#F7F6F3' }}>
               <div style={{ fontSize: 10, color: '#888', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '1px' }}>Move to Stage</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
@@ -767,7 +774,6 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
               </div>
             </div>
             <div style={{ padding: '18px 24px' }}>
-              {/* Info fields */}
               <div style={{ display: 'grid', gap: 14 }}>
                 {[['📧', 'Email', selectedCandidate.email], ['📱', 'Phone', selectedCandidate.phone], ['👤', 'Point of Contact', selectedCandidate.poc],
                   ['🏢', 'Department', selectedCandidate.department],
@@ -808,7 +814,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
                 </div>
               )}
 
-              {/* Ratings (post-interview only) */}
+              {/* Ratings */}
               {POST_INTERVIEW_STAGES.includes(selectedCandidate.stage) && (
                 <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#F7F6F3', border: '1px solid #E5E3DC' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -971,7 +977,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
               </div>
             </div>
             <div style={{ padding: '14px 24px', borderTop: '1px solid #E5E3DC', display: 'flex', gap: 8 }}>
-              <button onClick={() => convertPursuitToCandidate(selectedPursuit)} style={{ ...btnPrimary('#0D395A'), flex: 1, textAlign: 'center' }}>Move to Pipeline →</button>
+              <button onClick={() => convertPursuitToCandidate(selectedPursuit)} disabled={submitting} style={{ ...btnPrimary('#0D395A'), flex: 1, textAlign: 'center', opacity: submitting ? 0.5 : 1 }}>{submitting ? 'Converting...' : 'Move to Pipeline →'}</button>
               <button onClick={() => { setSelectedPursuit(null); setShowAddOutreach(null); setPursuitNoteText('') }} style={{ ...btnSecondary, flex: 1 }}>Close</button>
             </div>
           </div>
