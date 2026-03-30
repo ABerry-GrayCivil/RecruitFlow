@@ -770,7 +770,7 @@ const handlePhotoUpload = async (e) => {
           <div onClick={e => e.stopPropagation()} style={{ width: 460, maxWidth: '90vw', background: '#fff', height: '100vh', overflowY: 'auto', boxShadow: '-8px 0 30px rgba(0,0,0,0.15)' }}>
             <div style={{ background: 'linear-gradient(135deg, #0D395A 0%, #154B72 100%)', padding: '22px 24px', color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
-                <Avatar id={selectedCandidate.id} name={selectedCandidate.name} size={60} fontSize={22} border="3px solid rgba(255,255,255,0.2)" clickToUpload />
+                <Avatar id={selectedCandidate.id} name={selectedCandidate.name} size={60} fontSize={22} border="3px solid rgba(255,255,255,0.2)" clickToUpload photoUrl={selectedCandidate.photo_url} />
                 <div>
                   <h2 style={{ margin: 0, fontSize: 20, fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{selectedCandidate.name}</h2>
                   <p style={{ margin: '2px 0 0', fontSize: 13, color: '#8BAABE' }}>{selectedCandidate.position}</p>
