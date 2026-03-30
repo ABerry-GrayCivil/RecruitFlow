@@ -340,7 +340,6 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
       console.error('Error downloading file:', err)
     }
   }
-  
 const handlePhotoUpload = async (e) => {
     const file = e.target.files[0]
     const targetId = photoUploadTargetRef.current
@@ -349,7 +348,6 @@ const handlePhotoUpload = async (e) => {
       const url = await uploadPhoto(targetId, file)
       setPhotos(prev => ({ ...prev, [targetId]: url }))
 
-      // Save to database — try candidate first, then pursuit
       const { error: cErr } = await supabase
         .from('recruit_candidates')
         .update({ photo_url: url })
@@ -360,6 +358,11 @@ const handlePhotoUpload = async (e) => {
           .update({ photo_url: url })
           .eq('id', targetId)
       }
+
+      // Update the open drawer so photo shows immediately
+      setSelectedCandidate(prev => prev?.id === targetId ? { ...prev, photo_url: url } : prev)
+      setSelectedPursuit(prev => prev?.id === targetId ? { ...prev, photo_url: url } : prev)
+      await loadData()
     } catch (err) {
       console.error('Error uploading photo:', err)
     }
