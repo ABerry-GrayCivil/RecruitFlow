@@ -626,7 +626,7 @@ const handlePhotoUpload = async (e) => {
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
                   <div style={{ padding: '16px 18px 12px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                      <Avatar id={p.id} name={p.name} size={50} fontSize={18} photoUrl={candidate.photo_url} />
+                      <Avatar id={p.id} name={p.name} size={50} fontSize={18} photoUrl={p.photo_url} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 16, fontWeight: 700, color: '#2C2C2C', fontFamily: "'Fraunces', serif" }}>{p.name}</div>
                         <div style={{ fontSize: 13, color: '#666', marginTop: 1 }}>{p.position}</div>
