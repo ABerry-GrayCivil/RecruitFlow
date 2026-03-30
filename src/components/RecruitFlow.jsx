@@ -529,6 +529,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
                           <div style={{ fontSize: 10, color: '#777', marginBottom: 5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{candidate.position}</div>
                           <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', alignItems: 'center' }}>
                             <span style={{ padding: '1px 6px', borderRadius: 4, background: LEAD_SOURCES[candidate.lead_source]?.bg || '#f0f0f0', color: LEAD_SOURCES[candidate.lead_source]?.color || '#888', fontSize: 9, fontWeight: 600 }}>{LEAD_SOURCES[candidate.lead_source]?.label || candidate.lead_source}</span>
+                            {candidate.fair && <span style={{ padding: '1px 6px', borderRadius: 4, background: '#E8F0EC', color: '#0D395A', fontSize: 9, fontWeight: 600 }}>{candidate.fair}</span>}
                             {candidate.stage === 'offer' && candidate.offer_declined && <span style={{ padding: '1px 6px', borderRadius: 4, background: '#FDE8E8', color: '#B04A4A', fontSize: 9, fontWeight: 600 }}>Declined</span>}
                             {isEnd && <button onClick={e => { e.stopPropagation(); setShowDeleteConfirm({ type: 'candidate', id: candidate.id, name: candidate.name }) }} style={{ marginLeft: 'auto', padding: '1px 6px', borderRadius: 4, border: '1px solid #ddd', background: '#fff', fontSize: 9, color: '#B04A4A', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 }}>Remove</button>}
                           </div>
