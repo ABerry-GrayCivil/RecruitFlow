@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  fetchCandidates, createCandidate, updateCandidate, deleteCandidate as apiDeleteCandidate,
+  supabase, fetchCandidates, createCandidate, updateCandidate, deleteCandidate as apiDeleteCandidate,
   fetchPursuits, createPursuit, deletePursuit as apiDeletePursuit,
   fetchNotes, createNote, fetchOutreach, createOutreach,
   fetchRatings, upsertRating, uploadFile, fetchFiles, getFileUrl,
@@ -340,14 +340,26 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
       console.error('Error downloading file:', err)
     }
   }
-
-  const handlePhotoUpload = async (e) => {
+  
+const handlePhotoUpload = async (e) => {
     const file = e.target.files[0]
     const targetId = photoUploadTargetRef.current
     if (!file || !targetId) return
     try {
       const url = await uploadPhoto(targetId, file)
       setPhotos(prev => ({ ...prev, [targetId]: url }))
+
+      // Save to database — try candidate first, then pursuit
+      const { error: cErr } = await supabase
+        .from('recruit_candidates')
+        .update({ photo_url: url })
+        .eq('id', targetId)
+      if (cErr) {
+        await supabase
+          .from('recruit_pursuits')
+          .update({ photo_url: url })
+          .eq('id', targetId)
+      }
     } catch (err) {
       console.error('Error uploading photo:', err)
     }
@@ -523,7 +535,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
                           onMouseEnter={e => { e.currentTarget.style.borderColor = stage.color + '60'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)' }}
                           onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E3DC'; e.currentTarget.style.boxShadow = 'none' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
-                            <Avatar id={candidate.id} name={candidate.name} size={26} fontSize={9} />
+                            <Avatar id={candidate.id} name={candidate.name} size={32} fontSize={11} photoUrl={candidate.photo_url} />
                             <div style={{ fontSize: 12, fontWeight: 600, color: '#2C2C2C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{candidate.name}</div>
                           </div>
                           <div style={{ fontSize: 10, color: '#777', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{candidate.position}</div>
@@ -562,7 +574,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
                         onMouseEnter={e => e.currentTarget.style.background = '#F7F6F3'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                         <td style={{ padding: '9px 12px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Avatar id={candidate.id} name={candidate.name} size={28} fontSize={10} />
+                            <Avatar id={candidate.id} name={candidate.name} size={32} fontSize={11} photoUrl={candidate.photo_url} />
                             <div><div style={{ fontWeight: 600, fontSize: 13 }}>{candidate.name}</div><div style={{ fontSize: 11, color: '#888' }}>{candidate.email}</div></div>
                           </div>
                         </td>
@@ -611,7 +623,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
                   <div style={{ padding: '16px 18px 12px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                      <Avatar id={p.id} name={p.name} size={44} fontSize={15} />
+                      <Avatar id={p.id} name={p.name} size={50} fontSize={18} photoUrl={candidate.photo_url} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 16, fontWeight: 700, color: '#2C2C2C', fontFamily: "'Fraunces', serif" }}>{p.name}</div>
                         <div style={{ fontSize: 13, color: '#666', marginTop: 1 }}>{p.position}</div>
@@ -755,7 +767,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
           <div onClick={e => e.stopPropagation()} style={{ width: 460, maxWidth: '90vw', background: '#fff', height: '100vh', overflowY: 'auto', boxShadow: '-8px 0 30px rgba(0,0,0,0.15)' }}>
             <div style={{ background: 'linear-gradient(135deg, #0D395A 0%, #154B72 100%)', padding: '22px 24px', color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
-                <Avatar id={selectedCandidate.id} name={selectedCandidate.name} size={50} fontSize={18} border="3px solid rgba(255,255,255,0.2)" clickToUpload />
+                <Avatar id={selectedCandidate.id} name={selectedCandidate.name} size={60} fontSize={22} border="3px solid rgba(255,255,255,0.2)" clickToUpload />
                 <div>
                   <h2 style={{ margin: 0, fontSize: 20, fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{selectedCandidate.name}</h2>
                   <p style={{ margin: '2px 0 0', fontSize: 13, color: '#8BAABE' }}>{selectedCandidate.position}</p>
@@ -904,7 +916,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
           <div onClick={e => e.stopPropagation()} style={{ width: 480, maxWidth: '90vw', background: '#fff', height: '100vh', overflowY: 'auto', boxShadow: '-8px 0 30px rgba(0,0,0,0.15)' }}>
             <div style={{ background: 'linear-gradient(135deg, #8B5E47 0%, #D4967D 50%, #8B5E47 100%)', padding: '22px 24px', color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
-                <Avatar id={selectedPursuit.id} name={selectedPursuit.name} size={50} fontSize={18} border="3px solid rgba(255,255,255,0.2)" clickToUpload />
+                <Avatar id={selectedPursuit.id} name={selectedPursuit.name} size={60} fontSize={22} border="3px solid rgba(255,255,255,0.2)" clickToUpload />
                 <div>
                   <h2 style={{ margin: 0, fontSize: 20, fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{selectedPursuit.name}</h2>
                   <p style={{ margin: '2px 0 0', fontSize: 13, color: '#D4B8AC' }}>{selectedPursuit.position} at {selectedPursuit.company}</p>
