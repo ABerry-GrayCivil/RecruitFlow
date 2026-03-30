@@ -881,6 +881,16 @@ const handlePhotoUpload = async (e) => {
                 </div>
               )}
 
+              {selectedPursuit.linkedin && (
+  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 14 }}>
+    <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>🔗</span>
+    <div>
+      <div style={{ fontSize: 10, color: '#888', fontWeight: 500, marginBottom: 1 }}>LinkedIn</div>
+      <a href={selectedPursuit.linkedin.startsWith('http') ? selectedPursuit.linkedin : 'https://' + selectedPursuit.linkedin} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#2B6CB0', fontWeight: 500, textDecoration: 'none' }} onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>{selectedPursuit.linkedin}</a>
+    </div>
+  </div>
+)}
+              
               {/* Notes */}
               <div style={{ marginTop: 18 }}>
                 <div style={{ fontSize: 10, color: '#888', fontWeight: 600, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '1px' }}>Notes ({drawerNotes.length})</div>
