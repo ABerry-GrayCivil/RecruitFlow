@@ -782,7 +782,6 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
                   ['💼', 'Type', selectedCandidate.emp_type === 'intern' ? 'Intern' + (selectedCandidate.class_year ? ' — ' + selectedCandidate.class_year : '') : 'Full Time'],
                   ...(selectedCandidate.fair ? [['🏫', 'Job Fair', selectedCandidate.fair]] : []),
                   ...(selectedCandidate.interview_date ? [['🗓', 'Interview', formatInterviewDate(selectedCandidate.interview_date)]] : []),
-                  ...(selectedCandidate.linkedin ? [['🔗', 'LinkedIn', selectedCandidate.linkedin]] : []),
                 ].filter(([,,v]) => v).map(([icon, label, val]) => (
                   <div key={label} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                     <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>{icon}</span>
@@ -790,6 +789,15 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
                   </div>
                 ))}
               </div>
+              {selectedCandidate.linkedin && (
+  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 14 }}>
+    <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>🔗</span>
+    <div>
+      <div style={{ fontSize: 10, color: '#888', fontWeight: 500, marginBottom: 1 }}>LinkedIn</div>
+      <a href={selectedCandidate.linkedin.startsWith('http') ? selectedCandidate.linkedin : 'https://' + selectedCandidate.linkedin} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#2B6CB0', fontWeight: 500, textDecoration: 'none' }} onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>{selectedCandidate.linkedin}</a>
+    </div>
+  </div>
+)}
 
               {/* Files */}
               {drawerFiles.length > 0 && drawerFiles.map(f => (
@@ -907,7 +915,6 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
             <div style={{ padding: '18px 24px' }}>
               <div style={{ display: 'grid', gap: 14 }}>
                 {[['📧', 'Email', selectedPursuit.email], ['📱', 'Phone', selectedPursuit.phone], ['🏢', 'Company', selectedPursuit.company],
-                  ...(selectedPursuit.linkedin ? [['🔗', 'LinkedIn', selectedPursuit.linkedin]] : []),
                 ].filter(([,,v]) => v).map(([icon, label, val]) => (
                   <div key={label} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                     <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>{icon}</span>
@@ -915,7 +922,15 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
                   </div>
                 ))}
               </div>
-
+{selectedCandidate.linkedin && (
+  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 14 }}>
+    <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>🔗</span>
+    <div>
+      <div style={{ fontSize: 10, color: '#888', fontWeight: 500, marginBottom: 1 }}>LinkedIn</div>
+      <a href={selectedCandidate.linkedin.startsWith('http') ? selectedCandidate.linkedin : 'https://' + selectedCandidate.linkedin} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#2B6CB0', fontWeight: 500, textDecoration: 'none' }} onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>{selectedCandidate.linkedin}</a>
+    </div>
+  </div>
+)}
               {/* Notes */}
               <div style={{ marginTop: 18 }}>
                 <div style={{ fontSize: 10, color: '#888', fontWeight: 600, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '1px' }}>Notes ({drawerNotes.length})</div>
