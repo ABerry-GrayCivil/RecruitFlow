@@ -684,7 +684,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
                 {quickForm.empType === 'intern' && (
                   <select value={quickForm.classYear} onChange={e => setQuickForm(prev => ({ ...prev, classYear: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer', color: quickForm.classYear ? '#2C2C2C' : '#999' }}>
                     <option value="">Class Year...</option>
-                    {['Freshman', 'Sophomore', 'Junior', 'Senior'].map(y => <option key={y} value={y}>{y}</option>)}
+                    {['Freshman', 'Sophomore', 'Junior', 'Senior', 'Senior +'].map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
                 )}
               </div>
