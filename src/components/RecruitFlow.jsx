@@ -526,7 +526,8 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
                             <Avatar id={candidate.id} name={candidate.name} size={26} fontSize={9} />
                             <div style={{ fontSize: 12, fontWeight: 600, color: '#2C2C2C', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{candidate.name}</div>
                           </div>
-                          <div style={{ fontSize: 10, color: '#777', marginBottom: 5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{candidate.position}</div>
+                          <div style={{ fontSize: 10, color: '#777', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{candidate.position}</div>
+                          <div style={{ fontSize: 9, color: candidate.emp_type === 'intern' ? '#6B5B95' : '#888', marginBottom: 5, fontWeight: 500 }}>{candidate.emp_type === 'intern' ? 'Intern' + (candidate.class_year ? ' — ' + candidate.class_year : '') : 'Full Time'}</div>
                           <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', alignItems: 'center' }}>
                             <span style={{ padding: '1px 6px', borderRadius: 4, background: LEAD_SOURCES[candidate.lead_source]?.bg || '#f0f0f0', color: LEAD_SOURCES[candidate.lead_source]?.color || '#888', fontSize: 9, fontWeight: 600 }}>{LEAD_SOURCES[candidate.lead_source]?.label || candidate.lead_source}</span>
                             {candidate.fair && <span style={{ padding: '1px 6px', borderRadius: 4, background: '#E8F0EC', color: '#0D395A', fontSize: 9, fontWeight: 600 }}>{candidate.fair}</span>}
