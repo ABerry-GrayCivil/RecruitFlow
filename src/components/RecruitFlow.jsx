@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import Calendar from './Calendar'
 import {
   supabase, fetchCandidates, createCandidate, updateCandidate, deleteCandidate as apiDeleteCandidate,
   fetchPursuits, createPursuit, deletePursuit as apiDeletePursuit,
@@ -459,6 +460,7 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
               Pursuits
               {pursuits.length > 0 && <span style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: '50%', background: '#D4967D', color: '#fff', fontSize: 9, fontWeight: 700, display: mainTab === 'pursuits' ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center' }}>{pursuits.length}</span>}
             </button>
+            <button onClick={() => setMainTab('calendar')} style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: mainTab === 'calendar' ? 'rgba(255,255,255,0.18)' : 'transparent', color: mainTab === 'calendar' ? '#fff' : '#8BAABE', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Calendar</button>
           </div>
           <div style={{ fontSize: 12, color: '#8BAABE', fontWeight: 500 }}>{userName}</div>
           <button onClick={onSignOut} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: '#8BAABE', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button>
@@ -643,6 +645,9 @@ export default function RecruitFlow({ user, userName, onSignOut }) {
           )}
         </div>
       )}
+
+      {/* CALENDAR TAB */}
+      {mainTab === 'calendar' && <Calendar user={user} userName={userName} />}
 
       {/* ========== MODALS ========== */}
 
