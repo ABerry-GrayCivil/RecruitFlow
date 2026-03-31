@@ -187,8 +187,9 @@ export default function Calendar({ user, userName }) {
       })
       setReminderForm({ recipient_email: '', recipient_name: '', remind_before: '1_day' })
       await loadEventReminders(selectedEvent)
-    } catch (err) {
+   } catch (err) {
       console.error('Error adding reminder:', err)
+      alert('Error adding reminder: ' + err.message)
     }
   }
 
