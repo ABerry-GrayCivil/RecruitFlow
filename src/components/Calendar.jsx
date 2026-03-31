@@ -56,7 +56,19 @@ function formatTime12(time) {
 }
 
 function computeRemindAt(eventDate, eventTime, remindBefore) {
-  const d = new Date(eventDate + 'T' + (eventTime || '09:00') + ':00')
+  // eventTime could be '10:10', '10:10:00', or null
+  let timeStr = eventTime || '09:00'
+  // Normalize to HH:MM format
+  if (timeStr.split(':').length > 2) {
+    timeStr = timeStr.split(':').slice(0, 2).join(':')
+  }
+  const d = new Date(eventDate + 'T' + timeStr + ':00')
+  if (isNaN(d.getTime())) {
+    // Fallback if date is still invalid
+    const fallback = new Date(eventDate + 'T09:00:00')
+    fallback.setHours(8, 0, 0, 0)
+    return fallback.toISOString()
+  }
   switch (remindBefore) {
     case 'morning_of': d.setHours(8, 0, 0, 0); break
     case '1_day': d.setDate(d.getDate() - 1); d.setHours(8, 0, 0, 0); break
@@ -171,25 +183,30 @@ export default function Calendar({ user, userName }) {
   }
 
   const handleAddReminder = async () => {
-    if (!reminderForm.recipient_email || !selectedEvent) return
+    const email = reminderForm.recipient_email.trim()
+    if (!email || !selectedEvent) {
+      alert('Missing email or no event selected')
+      return
+    }
     try {
       const eventDate = selectedEvent.date
       const eventTime = selectedEvent.time
+      const remindAt = computeRemindAt(eventDate, eventTime, reminderForm.remind_before)
       await createReminder({
         event_id: selectedEvent.source === 'manual' ? selectedEvent.id : null,
         candidate_id: selectedEvent.candidateId || null,
         event_source: selectedEvent.source === 'manual' ? 'manual' : selectedEvent.type,
-        recipient_email: reminderForm.recipient_email,
-        recipient_name: reminderForm.recipient_name || null,
+        recipient_email: email,
+        recipient_name: reminderForm.recipient_name.trim() || null,
         remind_before: reminderForm.remind_before,
-        remind_at: computeRemindAt(eventDate, eventTime, reminderForm.remind_before),
+        remind_at: remindAt,
         created_by: user.id,
       })
       setReminderForm({ recipient_email: '', recipient_name: '', remind_before: '1_day' })
       await loadEventReminders(selectedEvent)
-   } catch (err) {
+    } catch (err) {
       console.error('Error adding reminder:', err)
-      alert('Error adding reminder: ' + err.message)
+      alert('Error adding reminder: ' + (err.message || JSON.stringify(err)))
     }
   }
 
