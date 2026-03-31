@@ -18,6 +18,7 @@ const REMIND_OPTIONS = [
   { value: '1_day', label: '1 day before' },
   { value: '2_days', label: '2 days before' },
   { value: '1_week', label: '1 week before' },
+  { value: '1_month', label: '1 month before' },
 ]
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -74,6 +75,7 @@ function computeRemindAt(eventDate, eventTime, remindBefore) {
     case '1_day': d.setDate(d.getDate() - 1); d.setHours(8, 0, 0, 0); break
     case '2_days': d.setDate(d.getDate() - 2); d.setHours(8, 0, 0, 0); break
     case '1_week': d.setDate(d.getDate() - 7); d.setHours(8, 0, 0, 0); break
+    case '1_month': d.setMonth(d.getMonth() - 1); d.setHours(8, 0, 0, 0); break
     default: break
   }
   return d.toISOString()
@@ -183,25 +185,31 @@ export default function Calendar({ user, userName }) {
   }
 
   const handleAddReminder = async () => {
-    const email = reminderForm.recipient_email.trim()
-    if (!email || !selectedEvent) {
+    const emailsRaw = reminderForm.recipient_email.trim()
+    if (!emailsRaw || !selectedEvent) {
       alert('Missing email or no event selected')
       return
     }
+    const emails = emailsRaw.split(',').map(e => e.trim()).filter(e => e)
+    if (emails.length === 0) return
     try {
       const eventDate = selectedEvent.date
       const eventTime = selectedEvent.time
       const remindAt = computeRemindAt(eventDate, eventTime, reminderForm.remind_before)
-      await createReminder({
-        event_id: selectedEvent.source === 'manual' ? selectedEvent.id : null,
-        candidate_id: selectedEvent.candidateId || null,
-        event_source: selectedEvent.source === 'manual' ? 'manual' : selectedEvent.type,
-        recipient_email: email,
-        recipient_name: reminderForm.recipient_name.trim() || null,
-        remind_before: reminderForm.remind_before,
-        remind_at: remindAt,
-        created_by: user.id,
-      })
+      for (const email of emails) {
+        // Extract name from email if it's a gray-civil address (e.g., aberry@ → Adam Berry style)
+        const namePart = email.split('@')[0] || ''
+        await createReminder({
+          event_id: selectedEvent.source === 'manual' ? selectedEvent.id : null,
+          candidate_id: selectedEvent.candidateId || null,
+          event_source: selectedEvent.source === 'manual' ? 'manual' : selectedEvent.type,
+          recipient_email: email,
+          recipient_name: namePart,
+          remind_before: reminderForm.remind_before,
+          remind_at: remindAt,
+          created_by: user.id,
+        })
+      }
       setReminderForm({ recipient_email: '', recipient_name: '', remind_before: '1_day' })
       await loadEventReminders(selectedEvent)
     } catch (err) {
@@ -484,16 +492,14 @@ export default function Calendar({ user, userName }) {
                   <div style={{ padding: 12, borderRadius: 10, background: '#F7F6F3', border: '1px solid #E5E3DC' }}>
                     <div style={{ fontSize: 11, color: '#888', fontWeight: 500, marginBottom: 8 }}>Add a reminder</div>
                     <div style={{ display: 'grid', gap: 6 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                        <input placeholder="Recipient name" value={reminderForm.recipient_name} onChange={e => setReminderForm(prev => ({ ...prev, recipient_name: e.target.value }))} style={{ ...inputStyle, padding: '8px 10px', fontSize: 12 }} />
-                        <input type="email" placeholder="Email *" value={reminderForm.recipient_email} onChange={e => setReminderForm(prev => ({ ...prev, recipient_email: e.target.value }))} style={{ ...inputStyle, padding: '8px 10px', fontSize: 12 }} />
-                      </div>
+                      <input placeholder="Emails (comma-separated) *" value={reminderForm.recipient_email} onChange={e => setReminderForm(prev => ({ ...prev, recipient_email: e.target.value }))} style={{ ...inputStyle, padding: '8px 10px', fontSize: 12 }} />
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         <select value={reminderForm.remind_before} onChange={e => setReminderForm(prev => ({ ...prev, remind_before: e.target.value }))} style={{ ...inputStyle, padding: '8px 10px', fontSize: 12, cursor: 'pointer', flex: 1 }}>
                           {REMIND_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
-                        <button onClick={handleAddReminder} disabled={!reminderForm.recipient_email} style={{ ...btnPrimary('#0D395A'), padding: '8px 14px', fontSize: 12, opacity: reminderForm.recipient_email ? 1 : 0.4 }}>Add</button>
+                        <button onClick={handleAddReminder} disabled={!reminderForm.recipient_email.trim()} style={{ ...btnPrimary('#0D395A'), padding: '8px 14px', fontSize: 12, opacity: reminderForm.recipient_email.trim() ? 1 : 0.4 }}>Add</button>
                       </div>
+                      <div style={{ fontSize: 10, color: '#AAA', fontStyle: 'italic' }}>e.g. aberry@gray-civil.com, nkelly@gray-civil.com</div>
                     </div>
                   </div>
                 </div>
