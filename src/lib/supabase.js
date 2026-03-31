@@ -260,3 +260,181 @@ export async function uploadPhoto(entityId, file) {
 
   return data.publicUrl
 }
+
+// ============================================================
+// ADD THESE FUNCTIONS TO src/lib/supabase.js
+// ============================================================
+
+// ============================================================
+// EVENTS
+// ============================================================
+export async function fetchEvents() {
+  const { data, error } = await supabase
+    .from('recruit_events')
+    .select('*')
+    .order('event_date', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export async function createEvent(event) {
+  const { data, error } = await supabase
+    .from('recruit_events')
+    .insert(event)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateEvent(id, updates) {
+  const { data, error } = await supabase
+    .from('recruit_events')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteEvent(id) {
+  const { error } = await supabase
+    .from('recruit_events')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+// ============================================================
+// REMINDERS
+// ============================================================
+export async function fetchReminders(eventId, candidateId) {
+  let query = supabase
+    .from('recruit_reminders')
+    .select('*')
+    .order('remind_at', { ascending: true })
+
+  if (eventId) query = query.eq('event_id', eventId)
+  if (candidateId) query = query.eq('candidate_id', candidateId)
+
+  const { data, error } = await query
+  if (error) throw error
+  return data
+}
+
+export async function createReminder(reminder) {
+  const { data, error } = await supabase
+    .from('recruit_reminders')
+    .insert(reminder)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteReminder(id) {
+  const { error } = await supabase
+    .from('recruit_reminders')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+// ============================================================
+// CALENDAR HELPERS — fetch all events for a date range
+// Combines manual events + auto-populated from candidates
+// ============================================================
+export async function fetchCalendarEvents(startDate, endDate) {
+  // 1. Manual events in range
+  const { data: manualEvents, error: evtErr } = await supabase
+    .from('recruit_events')
+    .select('*')
+    .gte('event_date', startDate)
+    .lte('event_date', endDate)
+    .order('event_date', { ascending: true })
+  if (evtErr) throw evtErr
+
+  // 2. Candidates with interview dates in range
+  const { data: interviews, error: intErr } = await supabase
+    .from('recruit_candidates')
+    .select('id, name, position, interview_date, poc, stage')
+    .not('interview_date', 'is', null)
+    .gte('interview_date', startDate)
+    .lte('interview_date', endDate + 'T23:59:59')
+  if (intErr) throw intErr
+
+  // 3. Candidates with offer_sent_date in range
+  const { data: offers, error: offErr } = await supabase
+    .from('recruit_candidates')
+    .select('id, name, position, offer_sent_date, poc, stage')
+    .not('offer_sent_date', 'is', null)
+    .gte('offer_sent_date', startDate)
+    .lte('offer_sent_date', endDate)
+  if (offErr) throw offErr
+
+  // 4. Candidates with hire_start_date in range
+  const { data: hires, error: hireErr } = await supabase
+    .from('recruit_candidates')
+    .select('id, name, position, hire_start_date, poc, stage')
+    .not('hire_start_date', 'is', null)
+    .gte('hire_start_date', startDate)
+    .lte('hire_start_date', endDate)
+  if (hireErr) throw hireErr
+
+  // Normalize into a unified format
+  const allEvents = [
+    ...manualEvents.map(e => ({
+      id: e.id,
+      title: e.title,
+      type: e.event_type,
+      date: e.event_date,
+      time: e.event_time,
+      endDate: e.end_date,
+      endTime: e.end_time,
+      location: e.location,
+      description: e.description,
+      candidateId: e.candidate_id,
+      source: 'manual',
+      createdBy: e.created_by_name,
+    })),
+    ...interviews.map(c => ({
+      id: 'interview-' + c.id,
+      title: `Interview: ${c.name}`,
+      type: 'interview',
+      date: c.interview_date.split('T')[0],
+      time: c.interview_date.includes('T') ? c.interview_date.split('T')[1]?.substring(0, 5) : null,
+      candidateId: c.id,
+      candidateName: c.name,
+      position: c.position,
+      poc: c.poc,
+      source: 'auto',
+    })),
+    ...offers.map(c => ({
+      id: 'offer-' + c.id,
+      title: `Offer Sent: ${c.name}`,
+      type: 'offer_sent',
+      date: c.offer_sent_date,
+      candidateId: c.id,
+      candidateName: c.name,
+      position: c.position,
+      source: 'auto',
+    })),
+    ...hires.map(c => ({
+      id: 'hire-' + c.id,
+      title: `Start Date: ${c.name}`,
+      type: 'new_hire_start',
+      date: c.hire_start_date,
+      candidateId: c.id,
+      candidateName: c.name,
+      position: c.position,
+      source: 'auto',
+    })),
+  ]
+
+  return allEvents.sort((a, b) => {
+    const da = a.date + (a.time || '99:99')
+    const db = b.date + (b.time || '99:99')
+    return da.localeCompare(db)
+  })
+}
