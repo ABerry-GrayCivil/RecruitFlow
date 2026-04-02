@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
+  supabase,
   fetchCalendarEvents, fetchEvents, createEvent, deleteEvent,
   createReminder, fetchReminders, deleteReminder,
 } from '../lib/supabase'
@@ -90,6 +91,9 @@ export default function Calendar({ user, userName }) {
   const [showAddEvent, setShowAddEvent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [eventReminders, setEventReminders] = useState([])
+  const [showSubscribe, setShowSubscribe] = useState(false)
+  const [calendarToken, setCalendarToken] = useState(null)
+  const [copied, setCopied] = useState(false)
 
   const [eventForm, setEventForm] = useState({
     title: '', event_type: 'career_fair', event_date: '', event_time: '',
@@ -115,6 +119,58 @@ export default function Calendar({ user, userName }) {
   }, [startDate, endDate])
 
   useEffect(() => { loadEvents() }, [loadEvents])
+
+  // Load or create calendar subscription token
+  const loadCalendarToken = async () => {
+    try {
+      const { data: existing, error: fetchErr } = await supabase
+        .from('recruit_calendar_tokens')
+        .select('token')
+        .eq('user_id', user.id)
+        .single()
+
+      if (existing) {
+        setCalendarToken(existing.token)
+        return existing.token
+      }
+
+      if (fetchErr && fetchErr.code === 'PGRST116') {
+        // No token yet — create one
+        const { data: newToken, error: insertErr } = await supabase
+          .from('recruit_calendar_tokens')
+          .insert({
+            user_id: user.id,
+            user_name: userName,
+            user_email: user.email,
+          })
+          .select('token')
+          .single()
+        if (insertErr) throw insertErr
+        setCalendarToken(newToken.token)
+        return newToken.token
+      }
+
+      if (fetchErr) throw fetchErr
+    } catch (err) {
+      console.error('Error loading calendar token:', err)
+    }
+  }
+
+  const handleShowSubscribe = async () => {
+    if (!calendarToken) await loadCalendarToken()
+    setShowSubscribe(true)
+    setCopied(false)
+  }
+
+  const feedUrl = calendarToken
+    ? `${window.location.origin}/api/calendar/${calendarToken}`
+    : ''
+
+  const copyFeedUrl = () => {
+    navigator.clipboard.writeText(feedUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 3000)
+  }
 
   const loadEventReminders = async (event) => {
     try {
@@ -254,11 +310,47 @@ export default function Calendar({ user, userName }) {
             <button onClick={() => setCalView('month')} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: calView === 'month' ? '#0D395A' : 'transparent', color: calView === 'month' ? '#fff' : '#666', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Month</button>
             <button onClick={() => setCalView('agenda')} style={{ padding: '5px 12px', borderRadius: 6, border: 'none', background: calView === 'agenda' ? '#0D395A' : 'transparent', color: calView === 'agenda' ? '#fff' : '#666', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Agenda</button>
           </div>
+          <button onClick={handleShowSubscribe} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #D5D3CC', background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: '#0D395A', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 14, lineHeight: 1 }}>📅</span> Subscribe
+          </button>
           <button onClick={() => { setShowAddEvent(true); setEventForm(prev => ({ ...prev, event_date: formatDate(new Date()) })) }} style={{ ...btnPrimary('#0D395A'), display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px' }}>
             <span style={{ fontSize: 15, lineHeight: 1 }}>+</span> Add Event
           </button>
         </div>
       </div>
+
+      {/* Subscribe Panel */}
+      {showSubscribe && (
+        <div style={{ margin: '0 0 16px', padding: 18, background: '#fff', borderRadius: 12, border: '1px solid #E5E3DC' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0D395A' }}>Subscribe in Outlook</div>
+              <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Add the recruiting calendar to your Outlook calendar</div>
+            </div>
+            <button onClick={() => setShowSubscribe(false)} style={{ background: 'none', border: 'none', color: '#999', fontSize: 16, cursor: 'pointer', padding: '2px 6px' }}>✕</button>
+          </div>
+          {calendarToken ? (
+            <div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <input type="text" readOnly value={feedUrl} style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #D5D3CC', fontSize: 12, fontFamily: "'DM Mono', monospace", color: '#555', background: '#F7F6F3', outline: 'none' }} onClick={e => e.target.select()} />
+                <button onClick={copyFeedUrl} style={{ ...btnPrimary(copied ? '#0D6847' : '#0D395A'), padding: '10px 18px', whiteSpace: 'nowrap' }}>{copied ? '✓ Copied' : 'Copy Link'}</button>
+              </div>
+              <div style={{ padding: 14, borderRadius: 10, background: '#F7F6F3', border: '1px solid #E5E3DC' }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>How to Subscribe</div>
+                <div style={{ fontSize: 12, color: '#555', lineHeight: 1.8 }}>
+                  1. Go to <a href="https://outlook.office.com/calendar" target="_blank" rel="noopener noreferrer" style={{ color: '#2B6CB0', fontWeight: 500 }}>outlook.office.com/calendar</a><br />
+                  2. Click <strong>Add calendar</strong> → <strong>Subscribe from web</strong><br />
+                  3. Paste the URL above and name it "RecruitFlow"<br />
+                  4. Click <strong>Import</strong> — it will sync to your desktop Outlook automatically
+                </div>
+                <div style={{ fontSize: 11, color: '#AAA', marginTop: 10, fontStyle: 'italic' }}>Note: Use Outlook on the web to subscribe, not the desktop app. The calendar refreshes every few hours.</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: 20, color: '#888' }}>Loading your subscription link...</div>
+          )}
+        </div>
+      )}
 
       {/* Legend */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
